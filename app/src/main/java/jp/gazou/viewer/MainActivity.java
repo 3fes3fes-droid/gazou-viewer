@@ -469,7 +469,7 @@ public final class MainActivity extends Activity {
             ImageEntry direct = queryAsMediaEntry(resolver, opened);
             if (direct == null && Build.VERSION.SDK_INT >= 29) {
                 try {
-                    Uri mediaUri = DocumentsContract.getMediaUri(resolver, opened);
+                    Uri mediaUri = MediaStore.getMediaUri(activity, opened);
                     if (mediaUri != null) {
                         direct = queryAsMediaEntry(resolver, mediaUri);
                     }
@@ -488,7 +488,7 @@ public final class MainActivity extends Activity {
             if (Build.VERSION.SDK_INT >= 29) {
                 ChromePathHint hint = ChromePathHint.from(opened);
                 if (hint != null) {
-                    FolderResult byChromePath = loadByChromePath(resolver, opened, source, hint);
+                    FolderResult byChromePath = loadByChromePath(activity, resolver, opened, source, hint);
                     if (byChromePath != null) {
                         return byChromePath;
                     }
@@ -498,7 +498,7 @@ public final class MainActivity extends Activity {
             // 3) Provider 固有 URI の一般フォールバック。
             //    名前 + サイズで候補を絞り、複数なら内容ハッシュと URI パス情報も照合する。
             if (Build.VERSION.SDK_INT >= 29) {
-                return findByMetadataAcrossVolumes(resolver, opened, source);
+                return findByMetadataAcrossVolumes(activity, resolver, opened, source);
             }
             return findLegacyApi28(resolver, opened, source);
         }
@@ -535,11 +535,11 @@ public final class MainActivity extends Activity {
             }
         }
 
-        private static FolderResult loadByChromePath(ContentResolver resolver, Uri opened,
+        private static FolderResult loadByChromePath(Activity activity, ContentResolver resolver, Uri opened,
                                                        SourceMetadata source, ChromePathHint hint) {
             Set<String> volumes;
             try {
-                volumes = MediaStore.getExternalVolumeNames(resolver.getContext());
+                volumes = MediaStore.getExternalVolumeNames(activity);
             } catch (RuntimeException e) {
                 return null;
             }
@@ -637,7 +637,7 @@ public final class MainActivity extends Activity {
             return out;
         }
 
-        private static FolderResult findByMetadataAcrossVolumes(ContentResolver resolver, Uri opened,
+        private static FolderResult findByMetadataAcrossVolumes(Activity activity, ContentResolver resolver, Uri opened,
                                                                   SourceMetadata source) {
             if (source.name == null || !isSupportedName(source.name)) {
                 return null;
@@ -645,7 +645,7 @@ public final class MainActivity extends Activity {
 
             Set<String> volumes;
             try {
-                volumes = MediaStore.getExternalVolumeNames(resolver.getContext());
+                volumes = MediaStore.getExternalVolumeNames(activity);
             } catch (RuntimeException e) {
                 return null;
             }
@@ -907,7 +907,7 @@ public final class MainActivity extends Activity {
                 }
             } catch (RuntimeException ignored) {
             }
-            if (Build.VERSION.SDK_INT >= 19 && DocumentsContract.isDocumentUri(resolver.getContext(), uri)) {
+            if (Build.VERSION.SDK_INT >= 19) {
                 try (Cursor c = resolver.query(uri,
                         new String[]{DocumentsContract.Document.COLUMN_LAST_MODIFIED},
                         null, null, null)) {
